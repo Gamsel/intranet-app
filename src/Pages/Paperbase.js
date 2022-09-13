@@ -10,7 +10,9 @@ import Content from './Content';
 import Header from './Header';
 import OrderBook from './Orderbook.js';
 import QuoteBook from './Quotebook.js';
+import LogIn from './LogIn.js';
 import { SnackbarProvider } from 'notistack';
+import { useCookies } from "react-cookie";
 
 function Copyright() {
   return (
@@ -170,8 +172,11 @@ theme = {
 const drawerWidth = 256;
 
 export default function Paperbase() {
+  const [cookies, setCookie] = useCookies(["user"]);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [contentType, setContentType] = React.useState("OrderBook");
+
+  console.log(cookies.user);
 
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
 
@@ -213,8 +218,11 @@ export default function Paperbase() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Header onDrawerToggle={handleDrawerToggle} />
           <Box component="main" sx={{ flex: 1, py: 6, px: 4, bgcolor: '#eaeff1' }}>
-            {contentType === "OrderBook" && <OrderBook />}
-            {contentType === "QuoteBook" && <QuoteBook />}
+            {cookies.user === undefined && <LogIn cookie={cookies} setCookie ={setCookie}/>}
+            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook />}
+            {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook />}
+
+            
             
           </Box>
           <Box component="footer" sx={{ p: 2, bgcolor: '#eaeff1' }}>

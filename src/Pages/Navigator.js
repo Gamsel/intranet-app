@@ -28,7 +28,7 @@ const categories = [
         
       },
       { id: 'QuoteBook', icon: <DnsRoundedIcon /> },
-      { id: 'Storage', icon: <PermMediaOutlinedIcon /> },
+      { id: 'LogIn', icon: <PermMediaOutlinedIcon /> },
       { id: 'Hosting', icon: <PublicIcon /> },
       { id: 'Functions', icon: <SettingsEthernetIcon /> },
       {
@@ -70,7 +70,7 @@ export default function Navigator(props) {
             </ListItem>
             {children.map(({ id: childId, icon, active }) => (
               <ListItem disablePadding key={childId}>
-                <ListItemButton selected={active} sx={item} onClick={(e) => {props.onSwitchContent(childId)}}>
+                <ListItemButton selected={active} sx={item} onClick={() => {props.onSwitchContent(childId)}}>
                   <ListItemIcon>{icon}</ListItemIcon>
                   <ListItemText>{childId}</ListItemText>
                 </ListItemButton>

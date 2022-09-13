@@ -108,7 +108,7 @@ class QuoteBook extends React.Component {
         let obj = jsonObject.Calls.BuySide[i];  
         let tmpArray = []
 
-        max[i] = obj.item.length;
+        max[i] =  obj.item.length;
 
         for(let p = 0; p < obj.item.length; p++) {
           tmpArray.push([obj.item[p].price,obj.item[p].qty]);

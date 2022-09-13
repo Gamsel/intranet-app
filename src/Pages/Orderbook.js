@@ -52,7 +52,8 @@ class OrderBook extends React.Component {
       
 
       if(this.state.oil_price > 0){
-      this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + this.state.oil_bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-"  }'); 
+        let bs =  this.state.oil_bs == "B" ? "S":"B" ;
+      this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-"  }'); 
       }else{
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
