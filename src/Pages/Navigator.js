@@ -28,13 +28,8 @@ const categories = [
         
       },
       { id: 'QuoteBook', icon: <DnsRoundedIcon /> },
-      { id: 'LogIn', icon: <PermMediaOutlinedIcon /> },
-      { id: 'Hosting', icon: <PublicIcon /> },
-      { id: 'Functions', icon: <SettingsEthernetIcon /> },
-      {
-        id: 'Machine learning',
-        icon: <SettingsInputComponentIcon />,
-      },
+    
+
     ],
   }  
 ];
