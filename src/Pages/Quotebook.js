@@ -20,7 +20,7 @@ export default class QuoteBook extends React.Component {
         data: {},
         oil_type: "C",
         oil_strike: 0,
-        oil_bs: "B",
+        oil_bs: "S",
         oil_qty: 0,
         oil_mm: "Marco",
         oil_price: 0,
@@ -46,7 +46,8 @@ export default class QuoteBook extends React.Component {
   
     const oilCommit = () =>{
       if(this.state.oil_price > 0){
-      this.state.ws.send('QB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + this.state.oil_bs + '","price":' + parseFloat( this.state.oil_price.toString())  + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"+"  }'); 
+        let bs =  this.state.oil_bs == "B" ? "S":"B" ;
+      this.state.ws.send('QB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs+ '","price":' + parseFloat( this.state.oil_price.toString())  + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"+"  }'); 
       }else{
         console.log("Price = 0")
       }
@@ -171,172 +172,152 @@ export default class QuoteBook extends React.Component {
         tmpStruct.push(
           <tr>
             <td></td>
-            <td style={{width:"10%", userSelect:"none"}}    onMouseDown={(e) => {
-						
-            this.textRef.current.focus();
+            <td style={{width:"10%", userSelect:"none"}}    onMouseDown={(e) => {			
+            
+            if(e.button === 0 ){  
+              if((C_S[i].length > p ? C_S[i][p][0] : 0 )== 0){
+                setTimeout(() => { 
+                this.textRef.current.focus();
+                }, 1);
+                this.setState({ 
+                  oil_type: "C",
+                  oil_strike: i,
+                  oil_bs: "B",
+                  oil_qty: 0,
+                  oil_mm: MM,
+                  oil_price: C_S[i].length > p ? C_S[i][p][0] : 0
+                });
 
-            if( e.button === 1 ) {
-            let price = C_S[i][p][0];
-            let qty = C_S[i][p][1];
+              }else{
+                let price = C_S[i][p][0];
+                let qty = C_S[i][p][1];
+  
+                oilCommitParameter(MM, i , "C" , "S" , price, qty,"-");
+              }                     
+            
 
-            oilCommitParameter(MM, i , "C" , "S" , price, qty,"-");	
-            
-            
-            } if(e.button === 0 ){
-                          
-            
-              this.setState({ 
-              oil_type: "C",
-              oil_strike: i,
-              oil_bs: "S",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: C_S[i].length > p ? C_S[i][p][0] : 0
-            });
             }
             
             }}>{ C_S[i].length > p ? C_S[i][p][1] == 0 ? "" : C_S[i][p][1]  :""}</td>
             <td style ={{backgroundColor:"#fca0a2",width:"10%",  userSelect:"none"}}   onMouseDown={(e) => {
-						this.textRef.current.focus();
+						
               if( e.button === 1 ) {
+              e.preventDefault()
               let price = C_S[i][p][0];
               let qty = C_S[i][p][1];
 
-              oilCommitParameter(MM, i , "C" , "S" , price, qty,"-");	
+              if(price - 0.01 > 0)
+              oilCommitParameter(MM, i , "C" , "S" , (price - 0.01).toFixed(2), qty,"+");	
               
-              }else if(e.button === 0 ){
               
-             
-              this.setState({ 
-              oil_type: "C",
-              oil_strike: i,
-              oil_bs: "S",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price:  C_S[i].length > p ? C_S[i][p][0] : 0
-            });
             }}}>{ C_S[i].length > p ? C_S[i][p][0] == 0 ? "" : C_S[i][p][0]  : ""}</td> 
             <td style ={{backgroundColor:"#a1e9a0", width:"10%", userSelect:"none"}}   onMouseDown={(e) => {
-						this.textRef.current.focus();
+						
               if( e.button === 1 ) {
+              e.preventDefault()
               let price = C_B[i][p][0];
               let qty = C_B[i][p][1];
 
-              oilCommitParameter(MM, i , "C" , "B" , price, qty,"-");	
+              if(price - 0.01 > 0)
+              oilCommitParameter(MM, i , "C" , "B" , (price - 0.01).toFixed(2) , qty,"+");	
               
-              }else if(e.button === 0 ){
-
-             
-              this.setState({ 
-              oil_type: "C",
-              oil_strike: i,
-              oil_bs: "B",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: C_B[i].length > p ? C_B[i][p][0] : 0
-            });
-            }}}>{C_B[i].length > p ? C_B[i][p][0] == 0 ? "" : C_B[i][p][0] : ""}</td>
+              }
+              }}>{C_B[i].length > p ? C_B[i][p][0] == 0 ? "" : C_B[i][p][0] : ""}</td>
             <td style={{width:"10%", userSelect:"none"}}    onMouseDown={(e) => {
-						this.textRef.current.focus();
-              if( e.button === 1 ) {
-              let price = C_B[i][p][0];
-              let qty = C_B[i][p][1];
+              if(e.button === 0 ){  
+              if((C_B[i].length > p ? C_B[i][p][0] : 0 )== 0){
+                setTimeout(() => { 
+                this.textRef.current.focus();
+                }, 1);
+                this.setState({ 
+                  oil_type: "C",
+                  oil_strike: i,
+                  oil_bs: "S",
+                  oil_qty: 0,
+                  oil_mm: MM,
+                  oil_price: C_B[i].length > p ? C_B[i][p][0] : 0
+                });
 
-              oilCommitParameter(MM, i , "C" , "B" , price, qty,"-");	
-              
-              }else if(e.button === 0 ){
-              
-             
-              this.setState({ 
-              oil_type: "C",
-              oil_strike: i,
-              oil_bs: "B",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: C_B[i].length > p ? C_B[i][p][0] : 0
-            });
+              }else{
+                let price = C_B[i][p][0];
+                let qty = C_B[i][p][1];
+  
+                oilCommitParameter(MM, i , "C" , "B" , price, qty,"-");
+              }
+
             }}}>{C_B[i].length > p ? C_B[i][p][1] == 0 ? "" : C_B[i][p][1] : ""}</td>
             <td style={{width:"10%", userSelect:"none"}} >{strikeMap[i]}</td>
             <td style={{width:"10%", userSelect:"none"}}    onMouseDown={(e) => {
-						this.textRef.current.focus();
-              if( e.button === 1 ) {
-              let price = P_S[i][p][0];
-              let qty = P_S[i][p][1];
 
-              oilCommitParameter(MM, i , "P" , "S" , price, qty,"-");	
-              
-              }else if(e.button === 0 ){
-              
-             
+
+              if(e.button === 0 ){            
+              if((P_S[i].length > p ? P_S[i][p][0] : 0) == 0){ 
+                setTimeout(() => { 
+                this.textRef.current.focus();
+                }, 1);
               this.setState({ 
               oil_type: "P",
               oil_strike: i,
-              oil_bs: "S",
+              oil_bs: "B",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: P_S[i].length > p ? P_S[i][p][0] : 0
-            });
-            }}}>{P_S[i].length > p ? P_S[i][p][1] == 0 ? "" : P_S[i][p][1] :""}</td>
+            });}else{
+              let price = P_S[i][p][0];
+              let qty = P_S[i][p][1];
+
+              oilCommitParameter(MM, i , "P" , "S" , price, qty,"-");
+            }
+            }
+            }}>{P_S[i].length > p ? P_S[i][p][1] == 0 ? "" : P_S[i][p][1] :""}</td>
             <td style ={{backgroundColor:"#fca0a2",width:"10%",  userSelect:"none"}}    onMouseDown={(e) => {
-						this.textRef.current.focus();
+						
               if( e.button === 1 ) {
+              e.preventDefault()
               let price = P_S[i][p][0];
               let qty = P_S[i][p][1];
-
-              oilCommitParameter(MM, i , "P" , "S" , price, qty,"-");	
+              if(price - 0.01 > 0)
+              oilCommitParameter(MM, i , "P" , "S" , (price - 0.01).toFixed(2), qty,"+");	
               
-              }else if(e.button === 0 ){
-              
-             
-              this.setState({ 
-              oil_type: "P",
-              oil_strike: i,
-              oil_bs: "S",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: P_S[i].length > p ? P_S[i][p][0] : 0
-            });
-            }}}>{P_S[i].length > p ? P_S[i][p][0] == 0 ? "" : P_S[i][p][0] : ""}</td>
+              }
+              }}>{P_S[i].length > p ? P_S[i][p][0] == 0 ? "" : P_S[i][p][0] : ""}</td>
             <td style ={{backgroundColor:"#a1e9a0", width:"10%", userSelect:"none"}}    onMouseDown={(e) => {
-						this.textRef.current.focus();
+			
               if( e.button === 1 ) {
+              e.preventDefault()
               let price = P_B[i][p][0];
               let qty = P_B[i][p][1];
 
-              oilCommitParameter(MM, i , "P" , "B" , price, qty,"-");	
+              if(price - 0.01 > 0)
+              oilCommitParameter(MM, i , "P" , "B" , (price - 0.01).toFixed(2), qty,"+");	
               
-              }else if(e.button === 0 ){
-              
-             
-              this.setState({ 
-              oil_type: "P",
-              oil_strike: i,
-              oil_bs: "B",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: P_B[i].length > p ? P_B[i][p][0] : 0
-            });
-            }}}>{P_B[i].length > p ? P_B[i][p][0] == 0 ? "" : P_B[i][p][0] : ""}</td>
+              }}}>{P_B[i].length > p ? P_B[i][p][0] == 0 ? "" : P_B[i][p][0] : ""}</td>
             <td style={{width:"10%", userSelect:"none"}}    onMouseDown={(e) => {
-						this.textRef.current.focus();
-              if( e.button === 1 ) {
-              let price = P_B[i][p][0];
-              let qty = P_B[i][p][1];
 
-              oilCommitParameter(MM, i , "P" , "B" , price, qty,"-");	
-              
-              }else if(e.button === 0 ){
-                          
-             
-              this.setState({ 
-              oil_type: "P",
-              oil_strike: i,
-              oil_bs: "B",
-              oil_qty: 0,
-              oil_mm: MM,
-              oil_price: P_B[i].length > p ? P_B[i][p][0] : 0
-            });
-            }}}>{P_B[i].length > p ? P_B[i][p][1] == 0 ? "" : P_B[i][p][1] : ""}</td>
+              if(e.button === 0 ){            
+                if((P_B[i].length > p ? P_B[i][p][0] : 0) == 0){ 
+
+                  setTimeout(() => { 
+                  this.textRef.current.focus();
+                  }, 1);
+
+                this.setState({ 
+                oil_type: "P",
+                oil_strike: i,
+                oil_bs: "S",
+                oil_qty: 0,
+                oil_mm: MM,
+                oil_price: P_B[i].length > p ? P_B[i][p][0] : 0
+              });}else{
+                let price = P_B[i][p][0];
+                let qty = P_B[i][p][1];
+  
+                oilCommitParameter(MM, i , "P" , "B" , price, qty,"-");
+              }
+              }
+            
+            
+            }}>{P_B[i].length > p ? P_B[i][p][1] == 0 ? "" : P_B[i][p][1] : ""}</td>
           </tr>
         );
         if (k )  tmpStruct.push(<tr style={{height:"15px",width:"100%"}}class="spacer"/>);

@@ -20,7 +20,7 @@ export default class OrderBook extends React.Component {
         data: {},
         oil_type: "C",
         oil_strike: 0,
-        oil_bs: "B",
+        oil_bs: "S",
         oil_qty: 0,
         oil_mm: "Marco",
         oil_price: 0,
@@ -118,7 +118,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "C",
               oil_strike: i,
-              oil_bs: "S",
+              oil_bs: "B",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: C_S[i][0]
@@ -129,7 +129,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "C",
               oil_strike: i,
-              oil_bs: "S",
+              oil_bs: "B",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: C_S[i][0]
@@ -140,7 +140,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "C",
               oil_strike: i,
-              oil_bs: "B",
+              oil_bs: "S",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: C_B[i][0]
@@ -151,7 +151,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "C",
               oil_strike: i,
-              oil_bs: "B",
+              oil_bs: "S",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: C_B[i][0]
@@ -163,7 +163,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "P",
               oil_strike: i,
-              oil_bs: "S",
+              oil_bs: "B",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: P_S[i][0]
@@ -174,7 +174,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "P",
               oil_strike: i,
-              oil_bs: "S",
+              oil_bs: "B",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: P_S[i][0]
@@ -185,7 +185,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "P",
               oil_strike: i,
-              oil_bs: "B",
+              oil_bs: "S",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: P_B[i][0]
@@ -196,7 +196,7 @@ export default class OrderBook extends React.Component {
               this.setState({ 
               oil_type: "P",
               oil_strike: i,
-              oil_bs: "B",
+              oil_bs: "S",
               oil_qty: 0,
               oil_mm: MM,
               oil_price: P_B[i][0]
