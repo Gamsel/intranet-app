@@ -10,6 +10,7 @@ import Content from './Content';
 import Header from './Header';
 import OrderBook from './Orderbook.js';
 import QuoteBook from './Quotebook.js';
+import { SnackbarProvider } from 'notistack';
 
 function Copyright() {
   return (
@@ -170,7 +171,7 @@ const drawerWidth = 256;
 
 export default function Paperbase() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [contentType, setContentType] = React.useState("QuoteBook");
+  const [contentType, setContentType] = React.useState("OrderBook");
 
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
 
@@ -183,6 +184,10 @@ export default function Paperbase() {
 
   return (
     <ThemeProvider theme={theme}>
+      <SnackbarProvider maxSnack={4}   anchorOrigin={{
+    vertical: 'top',
+    horizontal: 'right',
+  }}>
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
         <CssBaseline />
         <Box
@@ -217,6 +222,7 @@ export default function Paperbase() {
           </Box>
         </Box>
       </Box>
+      </SnackbarProvider>
     </ThemeProvider>
   );
 }

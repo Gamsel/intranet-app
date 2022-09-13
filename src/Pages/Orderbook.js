@@ -6,8 +6,9 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import config from './host.config'
+import { withSnackbar } from 'notistack';
 
-export default class OrderBook extends React.Component {
+class OrderBook extends React.Component {
 
   constructor(props) {
     super(props)
@@ -47,10 +48,13 @@ export default class OrderBook extends React.Component {
   if (this.state.ws == null) return;
   
     const oilCommit = () =>{
+
+      
+
       if(this.state.oil_price > 0){
       this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + this.state.oil_bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-"  }'); 
       }else{
-        console.log("Price = 0")
+        this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
     }
 
@@ -369,6 +373,7 @@ export default class OrderBook extends React.Component {
   }
 }
 
+export default withSnackbar(OrderBook);
 
 /*
 
