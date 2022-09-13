@@ -5,7 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
-
+import config from './host.config'
 
 export default class OrderBook extends React.Component {
 
@@ -30,7 +30,7 @@ export default class OrderBook extends React.Component {
 
   componentDidMount(){
 
-    const socket = new WebSocket("ws://192.168.0.155:12345");
+    const socket = new WebSocket("ws://"+config.ip+":"+ config.port);
     
     this.setState({ws: socket});
 
