@@ -219,8 +219,8 @@ export default function Paperbase() {
           <Header onDrawerToggle={handleDrawerToggle} />
           <Box component="main" sx={{ flex: 1, py: 6, px: 4, bgcolor: '#eaeff1' }}>
             {cookies.user === undefined && <LogIn cookie={cookies} setCookie ={setCookie}/>}
-            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook />}
-            {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook />}
+            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook  username ={cookies.user}/>}
+            {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook  username ={cookies.user} />}
 
             
             

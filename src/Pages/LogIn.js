@@ -41,7 +41,7 @@ class LogIn extends React.Component {
    
       if(event.data === "200"){
         this.handleCookie();
-      }else{
+      }else  if(event.data === "401") {
         this.props.enqueueSnackbar('Falsches Password oder Username', { variant: 'error' });
       }
 

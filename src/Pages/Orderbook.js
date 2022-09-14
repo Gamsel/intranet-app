@@ -23,7 +23,7 @@ class OrderBook extends React.Component {
         oil_strike: 0,
         oil_bs: "S",
         oil_qty: 0,
-        oil_mm: "Marco",
+        oil_mm: "mpl",
         oil_price: 0,
     }
    
@@ -53,7 +53,7 @@ class OrderBook extends React.Component {
 
       if(this.state.oil_price > 0){
         let bs =  this.state.oil_bs == "B" ? "S":"B" ;
-      this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-"  }'); 
+      this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-", "username":"'+ this.props.username +'"  }'); 
       }else{
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
@@ -74,10 +74,23 @@ class OrderBook extends React.Component {
     
     try {    
      
+      if(event.data == "500"){
+        this.props.enqueueSnackbar('Kauf erfolgreich!', { variant: 'success' });
+
+      }else if(event.data == "501"){
+        this.props.enqueueSnackbar('Nicht genug Stücke verfügbar!', { variant: 'error' });
+
+      }else if(event.data == "502"){
+        this.props.enqueueSnackbar('Keine Position zu hitten!', { variant: 'error' });
+
+      }else if(event.data.substring(0, 19) === "OrderUpdateResponse"){
+
+      
+     
       const strikeMap = { 0: "12:00", 1:"12:15" , 2:"12:30" , 3:"12:45" , 4:"13:00", 5:"13:15" , 6:"13:30" ,  7:"13:45" , 8:"14:00"};
       let tmpData = {...this.state.data};
       
-      let jsonResponse = JSON.parse(event.data);
+      let jsonResponse = JSON.parse(event.data.substring(19) );
       let structFull = [];
 
       for(let p = 0; p < jsonResponse.length; p++) {
@@ -240,10 +253,11 @@ class OrderBook extends React.Component {
       }
 
       this.setState({struct: structFull, data : tmpData });
-      
+    }
     } catch (err) {
       console.log(err);
     }
+  
   }.bind(this);
  
     return (<div style={{display:"flex", flexDirection:"column",  alignItems:"center"}}>
@@ -259,9 +273,9 @@ class OrderBook extends React.Component {
           label="Type"
           onChange={(e) =>{ this.setState({oil_mm: e.target.value})}}
         >
-          <MenuItem value={"Marco"}>Marco</MenuItem>
-          <MenuItem value={"Matthias"}>Matthias</MenuItem>
-          <MenuItem value={"OTC"}>OTC</MenuItem>
+          <MenuItem value={"mpl"}>Marco</MenuItem>
+          <MenuItem value={"mkr"}>Matthias</MenuItem>
+          
          
          
         </Select> 

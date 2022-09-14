@@ -23,7 +23,7 @@ class QuoteBook extends React.Component {
         oil_strike: 0,
         oil_bs: "S",
         oil_qty: 0,
-        oil_mm: "Marco",
+        oil_mm: "mpl",
         oil_price: 0,
     }
    
@@ -71,7 +71,7 @@ class QuoteBook extends React.Component {
 
   this.state.ws.onopen = (event) => {
 
-    this.state.ws.send('QBI{"MM":"Marco"}');
+    this.state.ws.send('QBI{"MM":"mpl"}');
     
   };
 
@@ -80,16 +80,16 @@ class QuoteBook extends React.Component {
   this.state.ws.onmessage = function (event) {
     
     try {    
-     
+      if(event.data.substring(0, 19) === "OrderUpdateResponse"){
       const strikeMap = { 0: "12:00", 1:"12:15" , 2:"12:30" , 3:"12:45" , 4:"13:00", 5:"13:15" , 6:"13:30" ,  7:"13:45" , 8:"14:00"};
       let tmpData = {...this.state.data};      
    
-      let jsonResponse = JSON.parse(event.data);
+      let jsonResponse = JSON.parse(event.data.substring(19));
 
       let jsonObject = null;
 
       for(let p = 0; p < jsonResponse.length; p++) {
-        if(jsonResponse[p].MM.name == "Marco")
+        if(jsonResponse[p].MM.name == "mpl")
         jsonObject = jsonResponse[p];
       }
      
@@ -354,7 +354,7 @@ class QuoteBook extends React.Component {
       
 
       this.setState({struct: structFull, data : tmpData });
-      
+  }
     } catch (err) {
       console.log(err);
     }

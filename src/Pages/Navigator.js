@@ -20,7 +20,7 @@ import PhonelinkSetupIcon from '@mui/icons-material/PhonelinkSetup';
 
 const categories = [
   {
-    id: 'Build',
+    id: 'Market',
     children: [
       {
         id: 'OrderBook',
