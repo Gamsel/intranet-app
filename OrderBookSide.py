@@ -45,39 +45,45 @@ class OrderBookSide:
                 if self.BuySide[strikeID].getItemAtIndex(k).getPrice() == price:
                     if operator == "+":
                         self.BuySide[strikeID].getItemAtIndex(k).setQty(self.BuySide[strikeID].getItemAtIndex(k).getQty() + quantity)
-                        return
+                        return "500"
                     elif operator == "-":
                         if self.BuySide[strikeID].getItemAtIndex(k).getQty() - quantity < 0:
                             print("Error nicht genug Stücke")
-                            return
+                            return "501"
                         elif self.BuySide[strikeID].getItemAtIndex(k).getQty() - quantity == 0:
                             self.BuySide[strikeID].deletItemAtIndex(k)
+                            return "500"
                         else:
                             self.BuySide[strikeID].getItemAtIndex(k).setQty(self.BuySide[strikeID].getItemAtIndex(k).getQty() - quantity)
-                        return
+                        return "500"
             if operator == "+":
                 self.BuySide[strikeID].createNewPosition(price,quantity) #Wenn keine Position neue erstellen
+                return "500"
             else:
                 print("Error keine Position zu hitten")
-            return
+                return "502"
+
 
         elif side == 'S':
             for k in range(self.SellSide[strikeID].getPositionsCount()):  # Gibt es schon eine Position?
                 if self.SellSide[strikeID].getItemAtIndex(k).getPrice() == price:
                     if operator == "+":
                         self.SellSide[strikeID].getItemAtIndex(k).setQty(self.SellSide[strikeID].getItemAtIndex(k).getQty() + quantity)
-                        return
+                        return "500"
                     elif operator == "-":
                         if self.SellSide[strikeID].getItemAtIndex(k).getQty() - quantity < 0:
                             print("Error nicht genug Stücke")
-                            return
+                            return "501"
                         elif self.SellSide[strikeID].getItemAtIndex(k).getQty() - quantity == 0:
                             self.SellSide[strikeID].deletItemAtIndex(k)
+                            return "500"
                         else:
                             self.SellSide[strikeID].getItemAtIndex(k).setQty(self.SellSide[strikeID].getItemAtIndex(k).getQty() - quantity)
-                        return
+                            return "500"
+
             if operator == "+":
                 self.SellSide[strikeID].createNewPosition(price, quantity)  # Wenn keine Position neue erstellen
+                return "500"
             else:
                 print("Error keine Position zu hitten")
-            return
+                return "502"

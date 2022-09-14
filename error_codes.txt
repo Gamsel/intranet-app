@@ -1,0 +1,6 @@
+200 Erfolgreiches Login
+401 Falscher Username / Password / Kein User gefunden
+
+500 Erfogrleicher Kauf
+501 Error nicht genug Stücke
+502 Error keine Position zu hitten

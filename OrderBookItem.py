@@ -11,12 +11,12 @@ class OrderBookItem:
     def updateContract(self, strikeID, optionType, side, price, quantity, operator):
 
         if not (optionType == "C" or optionType == "P") or not (side == "B" or side == "S") or quantity == 0:
-            return
+            return "500"
 
         if optionType == 'C':
-            self.CallSide.updateOption(strikeID, side, price, quantity, operator)
+            return self.CallSide.updateOption(strikeID, side, price, quantity, operator)
         elif optionType == 'P':
-            self.PutSide.updateOption(strikeID, side, price, quantity, operator)
+            return self.PutSide.updateOption(strikeID, side, price, quantity, operator)
 
     def toJson(self):
         x = '''{
