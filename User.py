@@ -1,9 +1,14 @@
 from Portfolio import Portfolio
+from OrderBookItem import OrderBookItem
 
 class User:
-    def __init__(self, username):
+    def __init__(self, username,  orderbook = None ):
         self.username = username
         self.portfolio = Portfolio()
+        if orderbook is not None:
+            self.Orderbook = OrderBookItem(username)
+        else:
+            self.Orderbook = None
 
 
     def returnPortfolioPositionsJson(self):
@@ -17,3 +22,6 @@ class User:
 
     def innit(self):
         self.portfolio.loadPositions(self.username)
+
+    def getOrderBook(self):
+        return self.Orderbook

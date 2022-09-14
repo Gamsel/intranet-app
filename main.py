@@ -8,18 +8,32 @@ from User import User
 CLIENTS = set()
 UserList = []
 
-OrderBooks = [OrderBookItem("mpl"), OrderBookItem("mkr")]
-Map = {0: "mpl", 1:  "mkr"}
 
-a = OrderBooks[0].updateContract(0, "C","B", 0.56, 2000,"+")
-b = OrderBooks[0].updateContract(0, "C","B", 0.51, 2000,"+")
-c = OrderBooks[0].updateContract(0, "C","B", 0.45, 2000,"+")
-d = OrderBooks[0].updateContract(1, "C","B", 0.56, 2000,"+")
-e = OrderBooks[0].updateContract(2, "C","B", 0.56, 2000,"+")
+ActiveMarkets = []
+OrderBooks = []
+Map = {}
+
+
 
 def innitUser():
     for i in user_conf:
-        UserList.append(User(i['username']))
+        if i['MM']:
+            user = User(i['username'], True)
+            UserList.append(user)
+            orderBook = user.getOrderBook()
+            OrderBooks.append(orderBook)
+
+            Map[len(Map)] = i['username']
+
+            a = orderBook.updateContract(0, "C", "B", 0.56, 2000, "+")
+            b = orderBook.updateContract(0, "C", "B", 0.51, 2000, "+")
+            c = orderBook.updateContract(0, "C", "B", 0.45, 2000, "+")
+            d = orderBook.updateContract(1, "C", "B", 0.56, 2000, "+")
+            e = orderBook.updateContract(2, "C", "B", 0.56, 2000, "+")
+            
+        else:
+            UserList.append(User(i['username']))
+
 
 def getUserByName(username):
     for i in UserList:
@@ -113,7 +127,6 @@ async def handler(websocket):
 
 
             elif message[:2] == "QB":
-                print(message[2:])
 
                 j = json.loads(message[2:])
 
