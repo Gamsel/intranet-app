@@ -7,6 +7,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import config from './host.config'
 import { withSnackbar } from 'notistack';
+import { RestaurantMenu } from "@mui/icons-material";
 
 class OrderBook extends React.Component {
 
@@ -16,14 +17,15 @@ class OrderBook extends React.Component {
     this.textRef = createRef();
 
     this.state = {
-        struct: <td>empty</td>,
+        struct: <p>empty</p>,
+        mmoptions: <MenuItem value={"none"}>Empty</MenuItem>,
         ws: null,
         data: {},
         oil_type: "C",
         oil_strike: 0,
         oil_bs: "S",
         oil_qty: 0,
-        oil_mm: "mpl",
+        oil_mm: "none",
         oil_price: 0,
     }
    
@@ -63,11 +65,17 @@ class OrderBook extends React.Component {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       oilCommit();
+    } else if (event.key === ',' || event.key === '.') {
+         event.preventDefault();
     }
   }
 
   this.state.ws.onopen = (event) => {
-    this.state.ws.send("OBI")
+    try{
+    this.state.ws.send("OBI");
+  } catch (err) {
+    console.log(err);
+  }
   };
 
   this.state.ws.onmessage = function (event) {
@@ -92,6 +100,8 @@ class OrderBook extends React.Component {
       
       let jsonResponse = JSON.parse(event.data.substring(19) );
       let structFull = [];
+      let mmOptionsFull = [];
+     
 
       for(let p = 0; p < jsonResponse.length; p++) {
       let jsonObject = jsonResponse[p];
@@ -100,6 +110,10 @@ class OrderBook extends React.Component {
       let P_B = [];
       let P_S = [];
       let MM = jsonObject.MM.name;
+
+      mmOptionsFull.push(<MenuItem value={MM.toString()}>{MM}</MenuItem>)
+ 
+
 
      
 
@@ -123,13 +137,13 @@ class OrderBook extends React.Component {
         P_S.push([obj.item[0].price,obj.item[0].qty]);
       }
 
-      console.log(C_S)
+
 
       let tmpStruct = [ <tr><td>{MM}</td><td/><td>CALLS</td><td/><td/><td/><td/><td>PUTS</td></tr>];
 
       for(let i = 0; i < jsonObject.Calls.BuySide.length; i++) {
         tmpStruct.push(
-          <tr>
+          <tr >
             <td></td>
             <td style={{width:"10%", userSelect:"none"}} onClick={() => {              
               this.textRef.current.focus();
@@ -227,6 +241,7 @@ class OrderBook extends React.Component {
 
       let base = <table style = {{width:"75vw", textAlign:"center", marginBottom:"50px", borderCollapse:"collapse"}}>
       <thead>
+        <tr>
           <th>MM</th>
           <th>QTY</th>
           <th>BID</th>
@@ -237,6 +252,7 @@ class OrderBook extends React.Component {
           <th>BID</th>
           <th>ASK</th>
           <th>QTY</th>
+          </tr>
       </thead>
       <tbody>
       
@@ -252,13 +268,15 @@ class OrderBook extends React.Component {
       tmpData[MM] = [C_B,C_S,P_B,P_S];     
       }
 
-      this.setState({struct: structFull, data : tmpData });
+      this.setState({struct: structFull, data : tmpData, mmoptions: mmOptionsFull,  oil_mm: jsonResponse[0].MM.name });
     }
     } catch (err) {
       console.log(err);
     }
   
   }.bind(this);
+
+    
  
     return (<div style={{display:"flex", flexDirection:"column",  alignItems:"center"}}>
 
@@ -273,11 +291,8 @@ class OrderBook extends React.Component {
           label="Type"
           onChange={(e) =>{ this.setState({oil_mm: e.target.value})}}
         >
-          <MenuItem value={"mpl"}>Marco</MenuItem>
-          <MenuItem value={"mkr"}>Matthias</MenuItem>
-          
-         
-         
+          {this.state.mmoptions}        
+                  
         </Select> 
         </FormControl>
 
@@ -344,14 +359,16 @@ class OrderBook extends React.Component {
           type="number"
           value={this.state.oil_qty}
           style= {{width:"125px", marginRight:"10px"}}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleKeyDown}          
           onChange={(e) =>{ 
+
+     
 
             if(e.target.value < 0)
             {
               this.setState({oil_qty: 0});
-            }else{                        
-              this.setState({oil_qty: e.target.value});
+            }else{                                      
+              this.setState({oil_qty: parseInt(e.target.value.toString())});
             }          
           
           

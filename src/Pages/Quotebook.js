@@ -16,14 +16,14 @@ class QuoteBook extends React.Component {
     this.textRef = createRef();
 
     this.state = {
-        struct: <td>empty</td>,
+        struct: <p>empty</p>,
         ws: null,
         data: {},
         oil_type: "C",
         oil_strike: 0,
         oil_bs: "S",
         oil_qty: 0,
-        oil_mm: "mpl",
+        oil_mm: this.props.username,
         oil_price: 0,
     }
    
@@ -66,12 +66,17 @@ class QuoteBook extends React.Component {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       oilCommit();
+    } else if (event.key === ',' || event.key === '.') {
+       event.preventDefault();
     }
   }
 
   this.state.ws.onopen = (event) => {
-
-    this.state.ws.send('QBI{"MM":"mpl"}');
+    try{
+    this.state.ws.send('QBI{"MM":"'+ this.props.username +'"}');
+  } catch (err) {
+    console.log(err);
+  }
     
   };
 
@@ -89,7 +94,7 @@ class QuoteBook extends React.Component {
       let jsonObject = null;
 
       for(let p = 0; p < jsonResponse.length; p++) {
-        if(jsonResponse[p].MM.name == "mpl")
+        if(jsonResponse[p].MM.name == this.props.username)
         jsonObject = jsonResponse[p];
       }
      
@@ -321,13 +326,14 @@ class QuoteBook extends React.Component {
             }}>{P_B[i].length > p ? P_B[i][p][1] == 0 ? "" : P_B[i][p][1] : ""}</td>
           </tr>
         );
-        if (k )  tmpStruct.push(<tr style={{height:"15px",width:"100%"}}class="spacer"/>);
+        if (k )  tmpStruct.push(<tr style={{height:"15px",width:"100%"}}/>);
       }
     }
 
 
       let base = <table style = {{width:"75vw", textAlign:"center", marginBottom:"50px", borderCollapse:"collapse"}}>
       <thead>
+        <tr>
           <th>MM</th>
           <th>QTY</th>
           <th>BID</th>
@@ -338,6 +344,7 @@ class QuoteBook extends React.Component {
           <th>BID</th>
           <th>ASK</th>
           <th>QTY</th>
+          </tr>
       </thead>
       <tbody>
       
@@ -434,7 +441,7 @@ class QuoteBook extends React.Component {
             {
               this.setState({oil_qty: 0});
             }else{                        
-              this.setState({oil_qty: e.target.value});
+              this.setState({oil_qty: parseInt(e.target.value.toString())});
             }          
           
           
@@ -452,14 +459,16 @@ class QuoteBook extends React.Component {
           style= {{width:"125px", marginRight:"10px"}}
           value={this.state.oil_price}     
           variant="standard"
-          onKeyDown={handleKeyDown}
+          onKeyDown={(event) => { if (event.key === 'Enter') {
+            oilCommit();
+          }}}
           onChange={(e) =>{ 
 
             if(e.target.value < 0)
             {
               this.setState({oil_price: 0});
             }else{                        
-              this.setState({oil_price: e.target.value});
+              this.setState({oil_price: parseFloat(e.target.value.toString())});
             }          
           
           
