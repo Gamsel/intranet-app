@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React , { useState,useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -10,9 +10,14 @@ import Content from './Content';
 import Header from './Header';
 import OrderBook from './Orderbook.js';
 import QuoteBook from './Quotebook.js';
+import Portfolio from './Portfolio.js';
 import LogIn from './LogIn.js';
 import { SnackbarProvider } from 'notistack';
 import { useCookies } from "react-cookie";
+import config from './host.config'
+import { useForkRef } from '@mui/material';
+
+
 
 function Copyright() {
   return (
@@ -172,13 +177,37 @@ theme = {
 const drawerWidth = 256;
 
 export default function Paperbase() {
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://"+config.ip+":"+ config.port); 
+    setSocketState(socket);
+  },[]);   
+
   const [cookies, setCookie] = useCookies(["user"]);
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [contentType, setContentType] = React.useState("OrderBook");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [contentType, setContentType] = useState("Portfolio");
+  const [socketState, setSocketState] = useState(false);
+  const [sockeReadytState, setSocketReadyState] = useState(0);
+  const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
+
+  
+
+  if(socketState === false) return <h1>Socket INIT</h1>
+
+  socketState.onopen = (event) => {
+    try{
+      setSocketReadyState(1)
+  } catch (err) {
+    console.log(err);
+  }
+  };
+  
+  if(sockeReadytState != 1) return <h1>Socket Connecting</h1>
 
   console.log(cookies.user);
+  console.log(socketState.readyState); 
 
-  const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
+ 
 
  const handleSwitchContent = (contentType) => {
     setContentType(contentType);
@@ -218,9 +247,11 @@ export default function Paperbase() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Header onDrawerToggle={handleDrawerToggle} />
           <Box component="main" sx={{ flex: 1, py: 6, px: 4, bgcolor: '#eaeff1' }}>
-            {cookies.user === undefined && <LogIn cookie={cookies} setCookie ={setCookie}/>}
-            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook  username ={cookies.user}/>}
-            {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook  username ={cookies.user} />}
+          
+            {cookies.user === undefined && <LogIn ws = {socketState} cookie={cookies} setCookie ={setCookie}/>}
+            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook ws = {socketState} username ={cookies.user}/>}
+            {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook ws = {socketState} username ={cookies.user} />}
+            {cookies.user != undefined && contentType === "Portfolio" && <Portfolio ws = {socketState} username ={cookies.user} />}
 
             
             

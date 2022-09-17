@@ -18,8 +18,7 @@ class OrderBook extends React.Component {
 
     this.state = {
         struct: <p>empty</p>,
-        mmoptions: <MenuItem value={"none"}>Empty</MenuItem>,
-        ws: null,
+        mmoptions: <MenuItem key="base" value={"none"}>Empty</MenuItem>,
         data: {},
         oil_type: "C",
         oil_strike: 0,
@@ -33,30 +32,27 @@ class OrderBook extends React.Component {
 
   componentDidMount(){
 
-    const socket = new WebSocket("ws://"+config.ip+":"+ config.port);
-    
-    this.setState({ws: socket});
-
-
-  }
-
-  send = () =>  {    
-    this.state.ws.send("Moin");   
-    console.log("yes")
+    this.props.ws.send("OBI");
+ 
   }
 
   render(){
     
-  if (this.state.ws == null) return;
+  if (this.props.ws == null) return;
   
     const oilCommit = () =>{
 
       
 
       if(this.state.oil_price > 0){
-        let bs =  this.state.oil_bs == "B" ? "S":"B" ;
-      this.state.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-", "username":"'+ this.props.username +'"  }'); 
-      }else{
+        if(this.state.oil_qty > 0){
+          let bs =  this.state.oil_bs == "B" ? "S":"B" ;
+          this.props.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-", "username":"'+ this.props.username +'"  }'); 
+        }else{
+          this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
+        }
+     
+        }else{
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
     }
@@ -70,15 +66,7 @@ class OrderBook extends React.Component {
     }
   }
 
-  this.state.ws.onopen = (event) => {
-    try{
-    this.state.ws.send("OBI");
-  } catch (err) {
-    console.log(err);
-  }
-  };
-
-  this.state.ws.onmessage = function (event) {
+  this.props.ws.onmessage = function (event) {
     
     try {    
      
@@ -93,25 +81,29 @@ class OrderBook extends React.Component {
 
       }else if(event.data.substring(0, 19) === "OrderUpdateResponse"){
 
-      
-     
       const strikeMap = { 0: "12:00", 1:"12:15" , 2:"12:30" , 3:"12:45" , 4:"13:00", 5:"13:15" , 6:"13:30" ,  7:"13:45" , 8:"14:00"};
+     
       let tmpData = {...this.state.data};
       
       let jsonResponse = JSON.parse(event.data.substring(19) );
       let structFull = [];
       let mmOptionsFull = [];
-     
+        
+      let firstActive = null;
 
       for(let p = 0; p < jsonResponse.length; p++) {
       let jsonObject = jsonResponse[p];
+
+      if(jsonObject.active !== "True") continue;
+
+      if (firstActive == null) firstActive = p;
       let C_B = [];
       let C_S = [];
       let P_B = [];
       let P_S = [];
       let MM = jsonObject.MM.name;
 
-      mmOptionsFull.push(<MenuItem value={MM.toString()}>{MM}</MenuItem>)
+      mmOptionsFull.push(<MenuItem key="MM" value={MM.toString()}>{MM}</MenuItem>)
  
 
 
@@ -119,22 +111,23 @@ class OrderBook extends React.Component {
 
       for(let i = 0; i < jsonObject.Calls.BuySide.length; i++) {
         let obj = jsonObject.Calls.BuySide[i];  
-        C_B.push([obj.item[0].price,obj.item[0].qty]);
+
+        C_B.push([obj.item[0].price,obj.item[0].qty, obj.item[0].active]);
       }
 
       for(let i = 0; i < jsonObject.Calls.SellSide.length; i++) {
         let obj = jsonObject.Calls.SellSide[i];
-        C_S.push([obj.item[0].price,obj.item[0].qty]);
+        C_S.push([obj.item[0].price,obj.item[0].qty, obj.item[0].active]);
       }
 
       for(let i = 0; i < jsonObject.Puts.BuySide.length; i++) {
         let obj = jsonObject.Puts.BuySide[i];
-        P_B.push([obj.item[0].price,obj.item[0].qty]);
+        P_B.push([obj.item[0].price,obj.item[0].qty, obj.item[0].active]);
       }
 
       for(let i = 0; i < jsonObject.Puts.SellSide.length; i++) {
         let obj = jsonObject.Puts.SellSide[i];
-        P_S.push([obj.item[0].price,obj.item[0].qty]);
+        P_S.push([obj.item[0].price,obj.item[0].qty, obj.item[0].active]);
       }
 
 
@@ -155,7 +148,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: C_S[i][0]
             });
-            }}>{C_S[i][1] == 0 ? "" : C_S[i][1]}</td>
+            }}>{C_S[i][1] == 0 || C_S[i][2] == 'N'  ? "" : C_S[i][1]}</td>
             <td style ={{backgroundColor:"#fca0a2",width:"10%",  userSelect:"none"}} onClick={() => {              
               this.textRef.current.focus();
               this.setState({ 
@@ -166,7 +159,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: C_S[i][0]
             });
-            }}>{C_S[i][0] == 0 ? "" : C_S[i][0]}</td> 
+            }}>{C_S[i][0] == 0 || C_S[i][2] == 'N'  ? "" : C_S[i][0]}</td> 
             <td style ={{backgroundColor:"#a1e9a0", width:"10%", userSelect:"none"}} onClick={() => {
               this.textRef.current.focus();
               this.setState({ 
@@ -177,7 +170,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: C_B[i][0]
             });
-            }}>{C_B[i][0] == 0 ? "" : C_B[i][0]}</td>
+            }}>{C_B[i][0] == 0 || C_B[i][2] == 'N'  ? "" : C_B[i][0]}</td>
             <td style={{width:"10%", userSelect:"none"}}  onClick={() => {              
               this.textRef.current.focus();
               this.setState({ 
@@ -188,7 +181,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: C_B[i][0]
             });
-            }}>{C_B[i][1] == 0 ? "" : C_B[i][1]}</td>
+            }}>{C_B[i][1] == 0 || C_B[i][2] == 'N'  ? "" : C_B[i][1]}</td>
             <td style={{width:"10%", userSelect:"none"}} >{strikeMap[i]}</td>
             <td style={{width:"10%", userSelect:"none"}}  onClick={() => {              
               this.textRef.current.focus();
@@ -200,7 +193,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: P_S[i][0]
             });
-            }}>{P_S[i][1] == 0 ? "" : P_S[i][1]}</td>
+            }}>{P_S[i][1] == 0 || P_S[i][2] == 'N'  ? "" : P_S[i][1]}</td>
             <td style ={{backgroundColor:"#fca0a2",width:"10%",  userSelect:"none"}}  onClick={() => {              
               this.textRef.current.focus();
               this.setState({ 
@@ -211,7 +204,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: P_S[i][0]
             });
-            }}>{P_S[i][0] == 0 ? "" : P_S[i][0]}</td>
+            }}>{P_S[i][0] == 0 || P_S[i][2] == 'N'  ? "" : P_S[i][0]}</td>
             <td style ={{backgroundColor:"#a1e9a0", width:"10%", userSelect:"none"}}  onClick={() => {              
               this.textRef.current.focus();
               this.setState({ 
@@ -222,7 +215,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: P_B[i][0]
             });
-            }}>{P_B[i][0] == 0 ? "" : P_B[i][0]}</td>
+            }}>{P_B[i][0] == 0 || P_B[i][2] == 'N'  ? "" : P_B[i][0]}</td>
             <td style={{width:"10%", userSelect:"none"}}  onClick={() => {              
               this.textRef.current.focus();
               this.setState({ 
@@ -233,7 +226,7 @@ class OrderBook extends React.Component {
               oil_mm: MM,
               oil_price: P_B[i][0]
             });
-            }}>{P_B[i][1] == 0 ? "" : P_B[i][1]}</td>
+            }}>{P_B[i][1] == 0 || P_B[i][2] == 'N'  ? "" : P_B[i][1]}</td>
           </tr>
         );
       }
@@ -267,8 +260,8 @@ class OrderBook extends React.Component {
 
       tmpData[MM] = [C_B,C_S,P_B,P_S];     
       }
-
-      this.setState({struct: structFull, data : tmpData, mmoptions: mmOptionsFull,  oil_mm: jsonResponse[0].MM.name });
+      if(this.state.oil_mm == "none") this.setState({struct: structFull, data : tmpData, mmoptions: mmOptionsFull,  oil_mm: jsonResponse[firstActive].MM.name });
+      else this.setState({struct: structFull, data : tmpData, mmoptions: mmOptionsFull});
     }
     } catch (err) {
       console.log(err);
@@ -305,8 +298,8 @@ class OrderBook extends React.Component {
           label="Type"
           onChange={(e) =>{ this.setState({oil_type: e.target.value})}}
         >
-          <MenuItem value={"C"}>Call</MenuItem>
-          <MenuItem value={"P"}>Put</MenuItem> 
+          <MenuItem key="C" value={"C"}>Call</MenuItem>
+          <MenuItem key="P" value={"P"}>Put</MenuItem> 
          
         </Select> 
         </FormControl>
@@ -320,8 +313,8 @@ class OrderBook extends React.Component {
           label="Type"
           onChange={(e) =>{ this.setState({oil_bs: e.target.value})}}
         >
-          <MenuItem value={"B"}>Buy</MenuItem>
-          <MenuItem value={"S"}>Sell</MenuItem>
+          <MenuItem key="B" value={"B"}>Buy</MenuItem>
+          <MenuItem key="S" value={"S"}>Sell</MenuItem>
          
          
         </Select> 
@@ -338,15 +331,15 @@ class OrderBook extends React.Component {
         >
           
 
-          <MenuItem value={0}>12:00</MenuItem>
-          <MenuItem value={1}>12:15</MenuItem>
-          <MenuItem value={2}>12:30</MenuItem>
-          <MenuItem value={3}>12:45</MenuItem>
-          <MenuItem value={4}>13:00</MenuItem>
-          <MenuItem value={5}>13:15</MenuItem>
-          <MenuItem value={6}>13:30</MenuItem>
-          <MenuItem value={7}>13:45</MenuItem>
-          <MenuItem value={8}>14:00</MenuItem>
+          <MenuItem key="0" value={0}>12:00</MenuItem>
+          <MenuItem key="1" value={1}>12:15</MenuItem>
+          <MenuItem key="2" value={2}>12:30</MenuItem>
+          <MenuItem key="3" value={3}>12:45</MenuItem>
+          <MenuItem key="4" value={4}>13:00</MenuItem>
+          <MenuItem key="5" value={5}>13:15</MenuItem>
+          <MenuItem key="6" value={6}>13:30</MenuItem>
+          <MenuItem key="7" value={7}>13:45</MenuItem>
+          <MenuItem key="8" value={8}>14:00</MenuItem>
           
          
         </Select> 

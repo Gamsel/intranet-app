@@ -5,8 +5,13 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
-import config from './host.config'
 import { withSnackbar } from 'notistack';
+import SpeedDial from '@mui/material/SpeedDial';
+import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
+import CloseIcon from '@mui/icons-material/Close';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
+import AcUnitIcon from '@mui/icons-material/AcUnit';
 
 class QuoteBook extends React.Component {
 
@@ -16,8 +21,7 @@ class QuoteBook extends React.Component {
     this.textRef = createRef();
 
     this.state = {
-        struct: <p>empty</p>,
-        ws: null,
+        struct: <p>empty</p>,     
         data: {},
         oil_type: "C",
         oil_strike: 0,
@@ -25,39 +29,47 @@ class QuoteBook extends React.Component {
         oil_qty: 0,
         oil_mm: this.props.username,
         oil_price: 0,
+        freezeMode: "Live" ,
+        marketStatus: "Off"
     }
    
 }
 
   componentDidMount(){
-
-    const socket = new WebSocket("ws://"+config.ip+":"+ config.port);
-    this.setState({ws: socket});
-
-  }
-
-  send = () =>  {    
-    this.state.ws.send("Moin");   
-    console.log("yes")
+    try{
+      this.props.ws.send('QBI{"MM":"'+ this.props.username +'"}');
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   render(){
     
-  if (this.state.ws == null) return;
+  if (this.props.ws == null) return;
   
     const oilCommit = () =>{
       if(this.state.oil_price > 0){
-        let bs =  this.state.oil_bs == "B" ? "S":"B" ;
-      this.state.ws.send('QB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs+ '","price":' + parseFloat( this.state.oil_price.toString())  + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"+"  }'); 
-      }else{
+        if(this.state.oil_qty > 0){
+          let bs =  this.state.oil_bs == "B" ? "S":"B" ;
+          this.props.ws.send('QB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs+ '","price":' + parseFloat( this.state.oil_price.toString())  
+                            + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"+", "mode": "' + this.state.freezeMode +'"  }');
+        }else{
+          this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
+        }
+        }else{
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
     }
 
-    const oilCommitParameter = (mm, strike ,type ,bs, price, qty,operator) =>{
+    const oilCommitParameter = (mm, strike ,type ,bs, price, qty, operator) =>{
       if(price > 0){
-      this.state.ws.send('QB{"MM":"' + mm + '","strikeID":' + strike + ',"optionType":"' + type + '","side":"' + bs + '","price":' + parseFloat( price.toString())  + ', "quantity":' + parseInt( qty.toString()) + ',"operator":"' + operator+'"  }'); 
-      }else{
+        if(this.state.oil_qty > 0){
+      this.props.ws.send('QB{"MM":"' + mm + '","strikeID":' + strike + ',"optionType":"' + type + '","side":"' + bs + '","price":' + parseFloat( price.toString())  + 
+                         ', "quantity":' + parseInt( qty.toString()) + ',"operator":"' + operator+'", "mode": "' + this.state.freezeMode +'" }'); 
+        }else{
+          this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
+        }
+        }else{
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
     }
@@ -71,18 +83,29 @@ class QuoteBook extends React.Component {
     }
   }
 
-  this.state.ws.onopen = (event) => {
-    try{
-    this.state.ws.send('QBI{"MM":"'+ this.props.username +'"}');
-  } catch (err) {
-    console.log(err);
+
+  const handleSpeedDialClick = (operation) => {
+    if(operation === "Close"){
+
+      this.props.ws.send('QBMarketStatus{"MM":"'+ this.props.username +'","type":"Off"}');
+      this.setState({ marketStatus: "Off" });
+
+    }else if(operation === "Live"){
+
+      this.props.ws.send('QBLIVE{"MM":"'+ this.props.username +'"}');
+      this.setState({freezeMode:"Live"});
+
+    }else if(operation === "Freeze"){
+
+      this.setState({freezeMode:"Freeze"});
+
+    }
+ 
+   
+
   }
-    
-  };
 
-
-
-  this.state.ws.onmessage = function (event) {
+  this.props.ws.onmessage = function (event) {
     
     try {    
       if(event.data.substring(0, 19) === "OrderUpdateResponse"){
@@ -97,7 +120,23 @@ class QuoteBook extends React.Component {
         if(jsonResponse[p].MM.name == this.props.username)
         jsonObject = jsonResponse[p];
       }
-     
+      
+      console.log(jsonObject)
+
+      if(jsonObject.active !== "True"){
+
+        let jsx =
+        <div style={{display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center"}}>
+
+          <h1>Market is Offline</h1>
+          <Button variant="contained" onClick={() => { this.props.ws.send('QBMarketStatus{"MM":"'+ this.props.username +'","type":"Live"}');}}>
+            Open Market       
+          </Button>
+        </div>
+
+        this.setState({struct: jsx});
+        return;
+      }
       let structFull = [];     
       
       let C_B = {};
@@ -360,16 +399,21 @@ class QuoteBook extends React.Component {
       tmpData[MM] = [C_B,C_S,P_B,P_S];    
       
 
-      this.setState({struct: structFull, data : tmpData });
+      this.setState({struct: structFull, data: tmpData , marketStatus: "Live" });
   }
     } catch (err) {
       console.log(err);
     }
   }.bind(this);
+
+    const actions = [
+      { icon: <CloseIcon />, name: 'Close Market', operation: "Close"}, 
+      { icon: this.state.freezeMode == "Freeze" ? <WhatshotIcon /> :  <AcUnitIcon />  , name:  this.state.freezeMode == "Freeze" ?  'Go Live' : 'Freeze Mode', operation: this.state.freezeMode == "Freeze" ?  'Live' : 'Freeze' },
+    ];
  
     return (<div style={{display:"flex", flexDirection:"column",  alignItems:"center"}}>
 
-      <div style={{height:"100px", width:"50vw",backgroundColor: this.state.oil_bs === "S" ? "#fca0a2":"#a1e9a0", marginBottom:"50px", display:"flex", justifyContent:"center", alignItems:"center"}}>
+      { this.state.marketStatus === "Live" && <div style={{height:"100px", width:"50vw",backgroundColor: this.state.oil_bs === "S" ? "#fca0a2":"#a1e9a0", marginBottom:"50px", display:"flex", justifyContent:"center", alignItems:"center"}}>
         
         <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
         <InputLabel id="demo-simple-select-standard-label">Type</InputLabel>
@@ -480,9 +524,30 @@ class QuoteBook extends React.Component {
         </Button>
 
           
-      </div>
+      </div>}
       
       {this.state.struct}
+
+
+      {this.state.freezeMode == "Live" && this.state.marketStatus === "Live" && <h1 style={{color:"red"}}> Live </h1>}
+      {this.state.freezeMode == "Freeze" && this.state.marketStatus === "Live" && <h1 style={{color:"blue"}}> Freeze Mode</h1>}
+
+      <SpeedDial
+        ariaLabel="SpeedDial basic example"
+        sx={{ position: 'absolute', bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+      >
+        {actions.map((action) => (
+          <SpeedDialAction
+            key={action.name}
+            icon={action.icon}
+            tooltipTitle={action.name}
+            onClick={() => { 
+              handleSpeedDialClick(action.operation)
+          }}
+          />
+        ))}
+      </SpeedDial>
         
     </div>
       

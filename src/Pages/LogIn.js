@@ -9,20 +9,13 @@ class LogIn extends React.Component {
   constructor(props) {
     super(props)
 
-    this.state = {        
-        ws: null,
+    this.state = {       
         username: "",
         password: ""       
     }
    
 }
 
-  componentDidMount(){
-
-    const socket = new WebSocket("ws://"+config.ip+":"+ config.port);
-    this.setState({ws: socket});
-
-  }
 
   handleCookie = () => {
    
@@ -32,10 +25,10 @@ class LogIn extends React.Component {
 
   render(){
     
-  if (this.state.ws == null) return; 
+  if (this.props.ws == null) return; 
  
 
-  this.state.ws.onmessage = function (event) {
+  this.props.ws.onmessage = function (event) {
     
     try {    
    
@@ -55,7 +48,7 @@ class LogIn extends React.Component {
     if(this.state.username.length > 0){
       if(this.state.password.length > 0){
 
-        this.state.ws.send('LOGIN{"user":"'+ this.state.username +'", "password":"'+ this.state.password +'"}');
+        this.props.ws.send('LOGIN{"user":"'+ this.state.username +'", "password":"'+ this.state.password +'"}');
 
       }else{
         this.props.enqueueSnackbar('Bitte Password eingeben', { variant: 'error' });

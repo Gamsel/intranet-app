@@ -22,12 +22,9 @@ const categories = [
   {
     id: 'Market',
     children: [
-      {
-        id: 'OrderBook',
-        icon: <PeopleIcon />,
-        
-      },
+      { id: 'OrderBook', icon: <PeopleIcon />,},
       { id: 'QuoteBook', icon: <DnsRoundedIcon /> },
+      { id: 'Portfolio', icon: <PublicIcon /> },
     
 
     ],
