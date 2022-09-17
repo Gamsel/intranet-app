@@ -8,7 +8,6 @@ from User import User
 CLIENTS = set()
 UserList = []
 
-
 ActiveMarkets = []
 OrderBooks = []
 Map = {}
@@ -25,11 +24,14 @@ def innitUser():
 
             Map[len(Map)] = i['username']
 
-            a = orderBook.updateContract(0, "C", "B", 0.56, 2000, "+")
-            b = orderBook.updateContract(0, "C", "B", 0.51, 2000, "+")
-            c = orderBook.updateContract(0, "C", "B", 0.45, 2000, "+")
-            d = orderBook.updateContract(1, "C", "B", 0.56, 2000, "+")
-            e = orderBook.updateContract(2, "C", "B", 0.56, 2000, "+")
+            a = orderBook.updateContract(0, "C", "B", 0.56, 2000, "+", "QB")
+            b = orderBook.updateContract(0, "C", "B", 0.51, 2000, "+", "QB")
+            c = orderBook.updateContract(0, "C", "B", 0.45, 2000, "+", "QB")
+            d = orderBook.updateContract(1, "C", "B", 0.56, 2000, "+", "QB")
+            e = orderBook.updateContract(2, "C", "B", 0.56, 2000, "+", "QB")
+
+            if i['username'] == 'MKR':
+                orderBook.setActive(True)
             
         else:
             UserList.append(User(i['username']))
@@ -49,7 +51,7 @@ def checkPassword(username, password):
 def getAllPortfolioJson():
     x = "PortfolioUpdate["
     for i in UserList:
-        x = x + '{"'+i.getUserName() + '":' + i.returnPortfolioPositionsJson() + '},'
+        x = x + '{"name" :"'+i.getUserName() + '", "data": ' + i.returnPortfolioPositionsJson() + '},'
 
     x = x[:-1]
 
@@ -80,6 +82,27 @@ async def handler(websocket):
             if message == "OBI":
 
                 await websocket.send(getOrderBooksJson())
+
+            elif message[:14] == "QBMarketStatus":
+                j = json.loads(message[14:])
+                indexOfMM = list(Map.keys())[list(Map.values()).index(j['MM'])]
+
+                if j['type'] == "Live":
+                    OrderBooks[indexOfMM].setActive(True)
+                elif j['type'] == "Off":
+                    OrderBooks[indexOfMM].setActive(False)
+                    OrderBooks[indexOfMM].resetOrderBook() #Beim ausschalten alle Orders löschen
+
+                await broadcast(getOrderBooksJson())  # Das Orderbuch anzeigen / verstecken
+
+            elif message[:6] == "QBLIVE":
+                j = json.loads(message[6:])
+                indexOfMM = list(Map.keys())[list(Map.values()).index(j['MM'])]
+
+                OrderBooks[indexOfMM].activeAll()
+
+                await broadcast(getOrderBooksJson()) # Nachdem die neuen Trades live sind Broadcast
+
             elif message[:5] == "LOGIN":
                 j = json.loads(message[5:])
 
@@ -87,20 +110,22 @@ async def handler(websocket):
                     await websocket.send("200")
                 else:
                     await websocket.send("401")
-            elif message[:3] == "QBI":
 
+            elif message[:3] == "QBI":
                 await websocket.send(getOrderBooksJson())
+
             elif message[:2] == "PI":
                 j = json.loads(message[2:])
 
-                await websocket.send( getUserByName(j['user']).returnPortfolioPositionsJson())
+                await websocket.send(getAllPortfolioJson())
+
             elif message[:2] == "OB":
 
                 j = json.loads(message[2:])
 
                 indexOfMM = list(Map.keys())[list(Map.values()).index(j['MM'])]
 
-                rc = OrderBooks[indexOfMM].updateContract(j['strikeID'], j['optionType'],j['side'], j['price'], j['quantity'], j['operator'])
+                rc = OrderBooks[indexOfMM].updateContract(j['strikeID'], j['optionType'],j['side'], j['price'], j['quantity'], j['operator'],"OB")
 
                 if rc == "500":
                     try:
@@ -121,10 +146,8 @@ async def handler(websocket):
                     await websocket.send(rc) #Kaufbestätigun schicken
                     await broadcast(getOrderBooksJson()) #Broadcast alle Updates im Orderbook/Qoutebook
                     await broadcast(getAllPortfolioJson()) #Broadcast alle Updates zu allen Portfolios
-                    print(getAllPortfolioJson())
                 else:
                     await websocket.send(rc) #Bei Fehler dem WS Melden
-
 
             elif message[:2] == "QB":
 
@@ -132,7 +155,12 @@ async def handler(websocket):
 
                 indexOfMM = list(Map.keys())[list(Map.values()).index(j['MM'])]
 
-                rc = OrderBooks[indexOfMM].updateContract(j['strikeID'], j['optionType'],j['side'], j['price'], j['quantity'], j['operator'])
+
+                mode = j['mode'] #Freeze oder Live?
+
+                print(mode)
+
+                rc = OrderBooks[indexOfMM].updateContract(j['strikeID'], j['optionType'],j['side'], j['price'], j['quantity'], j['operator'], "QB", mode)
 
                 await broadcast(getOrderBooksJson())
 
@@ -160,7 +188,7 @@ async def broadcastExcept(message,websocket_sender):
 
 async def main():
     innitUser()
-    async with websockets.serve(handler, "192.168.0.155", 12345):
+    async with websockets.serve(handler, "192.168.0.155", 8080):
         await asyncio.Future()  # run forever
 
 

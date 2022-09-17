@@ -1,25 +1,25 @@
 
 user_conf = [
 {
-"username":"twr",
+"username":"TWR",
 "password":"40822",
 "MM": False
 }
 ,
 {
-"username":"mpl",
+"username":"MPL",
 "password":"40227!",
 "MM": True
 }
 ,
 {
-"username":"mkr",
+"username":"MKR",
 "password":"40227_",
 "MM": True
 }
 ,
 {
-"username":"jha",
+"username":"JHA",
 "password":"40227@",
 "MM": False
 }

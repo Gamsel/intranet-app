@@ -4,3 +4,6 @@
 500 Erfogrleicher Kauf
 501 Error nicht genug Stücke
 502 Error keine Position zu hitten
+503 Invalide Eingabe
+
+

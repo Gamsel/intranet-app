@@ -9,6 +9,13 @@ class OrderBookSide:
             self.BuySide.append(OrderBookStrikeItem(i))
             self.SellSide.append(OrderBookStrikeItem(i))
 
+    def activateAll(self):
+        for i in self.BuySide:
+            i.activateAll()
+
+        for i in self.SellSide:
+            i.activateAll()
+
     def getJson(self):
         x = ''' 
             "BuySide":[
@@ -38,12 +45,17 @@ class OrderBookSide:
         return x
 
 
-    def updateOption( self, strikeID,  side,  price,  quantity, operator):
+    def updateOption( self, strikeID,  side,  price,  quantity, operator, origin, mode):
         
         if side == 'B':
             for k in range(self.BuySide[strikeID].getPositionsCount()): #Gibt es schon eine Position?
                 if self.BuySide[strikeID].getItemAtIndex(k).getPrice() == price:
-                    if operator == "+":
+                    if origin == "OB" and k != 0: #Orderbook darf nur erste Stelle hitten
+                        continue
+                    elif origin != "QB" and self.BuySide[strikeID].getItemAtIndex(k).getState() == "N":
+                        print("Error Position ist nicht Active, nicht hittable!")
+                        return "502"
+                    elif operator == "+":
                         self.BuySide[strikeID].getItemAtIndex(k).setQty(self.BuySide[strikeID].getItemAtIndex(k).getQty() + quantity)
                         return "500"
                     elif operator == "-":
@@ -57,17 +69,21 @@ class OrderBookSide:
                             self.BuySide[strikeID].getItemAtIndex(k).setQty(self.BuySide[strikeID].getItemAtIndex(k).getQty() - quantity)
                         return "500"
             if operator == "+":
-                self.BuySide[strikeID].createNewPosition(price,quantity) #Wenn keine Position neue erstellen
+                self.BuySide[strikeID].createNewPosition(price, quantity, mode) #Wenn keine Position neue erstellen
                 return "500"
             else:
                 print("Error keine Position zu hitten")
                 return "502"
 
-
         elif side == 'S':
             for k in range(self.SellSide[strikeID].getPositionsCount()):  # Gibt es schon eine Position?
                 if self.SellSide[strikeID].getItemAtIndex(k).getPrice() == price:
-                    if operator == "+":
+                    if origin == "OB" and k != 0:  # Orderbook darf nur erste Stelle hitten
+                        continue
+                    elif origin != "QB" and self.SellSide[strikeID].getItemAtIndex(k).getState() == "N":
+                        print("Error Position ist nicht Active, nicht hittable!")
+                        return "502"
+                    elif operator == "+":
                         self.SellSide[strikeID].getItemAtIndex(k).setQty(self.SellSide[strikeID].getItemAtIndex(k).getQty() + quantity)
                         return "500"
                     elif operator == "-":
@@ -82,7 +98,7 @@ class OrderBookSide:
                             return "500"
 
             if operator == "+":
-                self.SellSide[strikeID].createNewPosition(price, quantity)  # Wenn keine Position neue erstellen
+                self.SellSide[strikeID].createNewPosition(price, quantity, mode)  # Wenn keine Position neue erstellen
                 return "500"
             else:
                 print("Error keine Position zu hitten")

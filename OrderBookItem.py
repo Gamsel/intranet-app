@@ -2,21 +2,36 @@ from OrderBookSide import OrderBookSide
 
 
 class OrderBookItem:
-    def __init__(self, MM):
+    def __init__(self, MM, active=False):
         self.MM = MM
+        self.active = active
         self.CallSide = OrderBookSide()
         self.PutSide = OrderBookSide()
-        #self.StrikeMap = { {0, "12:00"}, {1, "12:15"} , {2, "12:30"} , {3, "12:45"} ,{4, "13:00"},{5, "13:15"} ,{6, "13:30"} ,{7, "13:45"} ,{8, "14:00"} }
 
-    def updateContract(self, strikeID, optionType, side, price, quantity, operator):
+    def setActive(self, mode):
+        self.active = mode
 
-        if not (optionType == "C" or optionType == "P") or not (side == "B" or side == "S") or quantity == 0:
-            return "500"
+    def getActiveStatus(self):
+        return self.active
+
+    def resetOrderBook(self):
+        self.CallSide = OrderBookSide()
+        self.PutSide = OrderBookSide()
+
+
+    def updateContract(self, strikeID, optionType, side, price, quantity, operator, origin, mode="Live"):
+
+        if not (optionType == "C" or optionType == "P") or not (side == "B" or side == "S") or quantity == 0 or price == 0:
+            return "503"
 
         if optionType == 'C':
-            return self.CallSide.updateOption(strikeID, side, price, quantity, operator)
+            return self.CallSide.updateOption(strikeID, side, price, quantity, operator, origin, mode)
         elif optionType == 'P':
-            return self.PutSide.updateOption(strikeID, side, price, quantity, operator)
+            return self.PutSide.updateOption(strikeID, side, price, quantity, operator, origin, mode)
+
+    def activeAll(self):
+        self.CallSide.activateAll()
+        self.PutSide.activateAll()
 
     def toJson(self):
         x = '''{
@@ -28,7 +43,8 @@ class OrderBookItem:
             },
             "Puts":{
                 ''' + self.PutSide.getJson() + '''
-            }
+            },
+            "active": "''' + str(self.active) + '''"
         }  '''
 
         return x

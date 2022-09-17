@@ -7,6 +7,10 @@ class OrderBookStrikeItem:
         self.positions = []
         self.strikeID = strikeID
 
+    def activateAll(self):
+        for i in self.positions:
+            i.setActiveState('Y')
+
     def getPositionsCount(self):
         return len(self.positions)
 
@@ -16,8 +20,13 @@ class OrderBookStrikeItem:
     def deletItemAtIndex(self, index):
         self.positions.pop(index)
 
-    def createNewPosition(self, price, qty):
-        self.positions.append(OrderBookStrikeElement(price,qty))
+    def createNewPosition(self, price, qty, mode):
+
+        if mode == "Freeze":
+            self.positions.append(OrderBookStrikeElement(price, qty, 'N'))
+        else:
+            self.positions.append(OrderBookStrikeElement(price, qty))
+
         self.positions.sort(key=lambda x: x.price)
 
     def getPositions(self):
@@ -30,7 +39,8 @@ class OrderBookStrikeItem:
             y = ''' [{
          
                     "price": 0,
-                    "qty": 0
+                    "qty": 0,
+                    "active": "Y"
               
             }]'''
 
@@ -39,7 +49,8 @@ class OrderBookStrikeItem:
                 y = ''' [{
 
                                       "price": ''' + str(self.positions[0].getPrice()) + ''',
-                                      "qty": ''' + str(self.positions[0].getQty()) + '''
+                                      "qty": ''' + str(self.positions[0].getQty()) + ''',
+                                      "active": "''' + self.positions[0].getState() + '''"
 
                                 }] '''
             else:
@@ -48,7 +59,8 @@ class OrderBookStrikeItem:
                     y = y + ''' {
                     
                           "price": ''' + str(self.positions[i].getPrice()) + ''',
-                          "qty": ''' + str(self.positions[i].getQty()) + '''
+                          "qty": ''' + str(self.positions[i].getQty()) + ''',
+                          "active": "''' + self.positions[i].getState() + '''"
                       
                     },'''
                 y = y[:-1]
