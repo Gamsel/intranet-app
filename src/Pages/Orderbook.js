@@ -17,7 +17,7 @@ class OrderBook extends React.Component {
     this.textRef = createRef();
 
     this.state = {
-        struct: <p>empty</p>,
+        struct: <h1>Kein Market geöffnet!</h1>,
         mmoptions: <MenuItem key="base" value={"none"}>Empty</MenuItem>,
         data: {},
         oil_type: "C",
@@ -46,10 +46,14 @@ class OrderBook extends React.Component {
 
       if(this.state.oil_price > 0){
         if(this.state.oil_qty > 0){
+          if(this.props.username != this.state.oil_mm){
           let bs =  this.state.oil_bs == "B" ? "S":"B" ;
           this.props.ws.send('OB{"MM":"' + this.state.oil_mm + '","strikeID":' + this.state.oil_strike + ',"optionType":"' + this.state.oil_type + '","side":"' + bs + '","price":' + this.state.oil_price + ', "quantity":' + parseInt( this.state.oil_qty.toString()) + ',"operator":"-", "username":"'+ this.props.username +'"  }'); 
+          }else{
+            this.props.enqueueSnackbar('Self hit prevention!', { variant: 'error' });
+          }
         }else{
-          this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
+            this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
         }
      
         }else{

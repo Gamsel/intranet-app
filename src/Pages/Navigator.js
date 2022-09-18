@@ -18,18 +18,7 @@ import TimerIcon from '@mui/icons-material/Timer';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PhonelinkSetupIcon from '@mui/icons-material/PhonelinkSetup';
 
-const categories = [
-  {
-    id: 'Market',
-    children: [
-      { id: 'OrderBook', icon: <PeopleIcon />,},
-      { id: 'QuoteBook', icon: <DnsRoundedIcon /> },
-      { id: 'Portfolio', icon: <PublicIcon /> },
-    
 
-    ],
-  }  
-];
 
 const item = {
   py: '2px',
@@ -48,6 +37,24 @@ const itemCategory = {
 
 export default function Navigator(props) {
   const { ...other } = props;
+
+  const MarketMaker = ['MPL','MKR'];
+
+  let childs = [
+    { id: 'OrderBook', icon: <PeopleIcon />,},     
+    { id: 'Portfolio', icon: <PublicIcon /> }
+  ]
+
+  if(MarketMaker.includes(props.username))
+  childs.push({ id: 'QuoteBook', icon: <TimerIcon /> })
+
+  const categories = [
+    {
+      id: 'Market',
+      children: childs 
+      
+    }  
+  ];
    
   return (
     <Drawer variant="permanent" {...other}>

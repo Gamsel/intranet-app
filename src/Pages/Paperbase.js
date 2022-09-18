@@ -242,6 +242,7 @@ export default function Paperbase() {
             PaperProps={{ style: { width: drawerWidth } }}
             sx={{ display: { sm: 'block', xs: 'none' } }}
             onSwitchContent = {handleSwitchContent}
+            username = {cookies.user}
           />
         </Box>
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

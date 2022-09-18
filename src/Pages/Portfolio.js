@@ -13,7 +13,6 @@ import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
 import Checkbox from '@mui/material/Checkbox';
 import { visuallyHidden } from '@mui/utils';
 import { ResponsiveLine } from '@nivo/line'
@@ -218,7 +217,8 @@ class Portfolio extends React.Component {
        timeMinute:0,
        timeSecound: 0,
        plotData: [],
-       plotDataSelect: []
+       plotDataSelect: [],
+       groupedValue: {}
     }
 
     }
@@ -237,9 +237,35 @@ class Portfolio extends React.Component {
             this.generatePlotData()
         }
 
+        if (prevState.timeSecound !== this.state.timeSecound) {
+            this.getGroupedPrices()
+        }
+
         
       }
 
+
+    getGroupedPrices = () =>{
+        let current = {};
+
+        const strikeMap = { 0: "12:00", 1:"12:15" , 2:"12:30" , 3:"12:45" , 4:"13:00", 5:"13:15" , 6:"13:30" ,  7:"13:45" , 8:"14:00"};     
+
+        for(let i = 0; i < this.state.rows.length; i++){
+
+            const row = this.state.rows[i];
+
+            const value = Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity,new Date(Date.now()),row.price)*100) / 100;
+
+            if(current[row.cp] == undefined) current[row.cp] = value;
+            else current[row.cp] = current[row.cp] + value;
+
+        }
+
+        console.log(current)
+
+        this.setState({groupedValue: current});
+    }
+    
     getTimeDiff = (start, end) => {    
 
         start = start.split(':');    
@@ -256,8 +282,7 @@ class Portfolio extends React.Component {
     
     
     
-    }
-    
+    }    
     
     getCurrentValue = (BuySell, CallPut, Strike, quantity,currentTime, price ) => {
     
@@ -461,6 +486,8 @@ class Portfolio extends React.Component {
 
         this.handleTime();
 
+        this.getGroupedPrices()
+
         this.interval = setInterval(() =>{ this.handleTime()}, 1000);
     } catch (err) {
         console.log(err);
@@ -562,6 +589,21 @@ class Portfolio extends React.Component {
     this.state.page > 0 ? Math.max(0, (1 +  this.state.page) *  this.state.rowsPerPage - this.state.rows.length) : 0;
 
 
+   let groupedPrices = [];
+
+   for(let [key, val] of Object.entries(this.state.groupedValue)) {
+        groupedPrices.push(<div style={{width:"100%", display:"flex",flexDirection:"column",alignItems:"center"}} key ={key}>
+            <h3 style={{margin:"0"}}>{key}</h3>
+            <h4 style={{marginTop:"0"}}>{Math.round(val*100)/100} GP</h4>
+
+        </div>);   
+    }
+
+
+
+  
+
+
   return ( <div style={{display:"flex", flexDirection:"column",alignItems:"center"}}>
 
     <div style={{height:"40vh",width:"100%"}}>
@@ -641,7 +683,7 @@ class Portfolio extends React.Component {
     
     </div> 
 
-    <h3 style={{marginTop:"50px"}}>{this.state.timeHour} : {this.state.timeMinute} : {this.state.timeSecound < 10 ? "0" + this.state.timeSecound.toString() : this.state.timeSecound }</h3>
+    <h3 style={{marginTop:"50px"}}>{this.state.timeHour} : { this.state.timeMinute < 10 ? "0" + this.state.timeMinute.toString() :  this.state.timeMinute} : {this.state.timeSecound < 10 ? "0" + this.state.timeSecound.toString() : this.state.timeSecound }</h3>
     <div style={{display:"flex", flexDirection:"row",width:"100%"}}>
     <Box sx={{width: '50%' }}>
 
@@ -701,7 +743,7 @@ class Portfolio extends React.Component {
                       <TableCell>{row.price}</TableCell>
                       <TableCell>{row.quantity}</TableCell>
                       <TableCell>{row.cp}</TableCell>
-                      <TableCell>{Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity,new Date(Date.now()),row.price)*100) / 100}</TableCell>
+                      <TableCell>{(Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity,new Date(Date.now()),row.price)*100) / 100).toString() + " GP"}</TableCell>
                   
                     </TableRow>
                   );
@@ -729,10 +771,8 @@ class Portfolio extends React.Component {
         />
     </Box> 
     <div style={{display:"flex", flexDirection:"column",width:"50%", justifyContent:"center", alignItems:"center"}}>
-
-    <h1>1</h1>
-
-    <h1>2</h1>
+     <h2>Sum Current Value</h2>               
+    {groupedPrices}
 
     </div>
      
