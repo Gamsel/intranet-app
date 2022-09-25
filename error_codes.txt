@@ -6,4 +6,9 @@
 502 Error keine Position zu hitten
 503 Invalide Eingabe
 
+601 User gibt es schon
+602 Falscher one time code
+
+
+f0ba5d57c7a46efd2d96a02f98d24d49ab7f5e1e
 

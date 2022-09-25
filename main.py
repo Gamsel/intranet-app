@@ -1,21 +1,23 @@
 import asyncio
 import websockets
-from OrderBookItem import OrderBookItem
+from FileReader import FileReader
 import json
-from config import user_conf
 from User import User
+
+fr = FileReader()
+fr.innitUserFile()
 
 CLIENTS = set()
 UserList = []
 
-ActiveMarkets = []
+arrivalTime = None
+
+
 OrderBooks = []
 Map = {}
 
-
-
 def innitUser():
-    for i in user_conf:
+    for i in fr.getUserConf():
         if i['MM']:
             user = User(i['username'], True)
             UserList.append(user)
@@ -23,15 +25,6 @@ def innitUser():
             OrderBooks.append(orderBook)
 
             Map[len(Map)] = i['username']
-
-            a = orderBook.updateContract(0, "C", "B", 0.56, 2000, "+", "QB")
-            b = orderBook.updateContract(0, "C", "B", 0.51, 2000, "+", "QB")
-            c = orderBook.updateContract(0, "C", "B", 0.45, 2000, "+", "QB")
-            d = orderBook.updateContract(1, "C", "B", 0.56, 2000, "+", "QB")
-            e = orderBook.updateContract(2, "C", "B", 0.56, 2000, "+", "QB")
-
-            if i['username'] == 'MKR':
-                orderBook.setActive(True)
             
         else:
             UserList.append(User(i['username']))
@@ -43,7 +36,7 @@ def getUserByName(username):
             return i
 
 def checkPassword(username, password):
-    for i in user_conf:
+    for i in fr.getUserConf():
         if i['username'] == username and i['password'] == password:
             return True
 
@@ -53,9 +46,7 @@ def getAllPortfolioJson():
     for i in UserList:
         x = x + '{"name" :"'+i.getUserName() + '", "data": ' + i.returnPortfolioPositionsJson() + '},'
 
-    x = x[:-1]
-
-    x = x + "]"
+    x = x + '{"arrivalTime":"' + str(arrivalTime) + '"}]'
 
     return x
 
@@ -69,6 +60,10 @@ def getOrderBooksJson():
     x = x + "]"
 
     return x
+
+def setArrivalTime(time):
+    global arrivalTime
+    arrivalTime = time
 
 async def handler(websocket):
 
@@ -94,6 +89,36 @@ async def handler(websocket):
                     OrderBooks[indexOfMM].resetOrderBook() #Beim ausschalten alle Orders löschen
 
                 await broadcast(getOrderBooksJson())  # Das Orderbuch anzeigen / verstecken
+            elif message[:10] == "SETARRIVAL":
+                j = json.loads(message[10:])
+
+                setArrivalTime(j['time'])
+
+                for i in range(len(OrderBooks)):
+                    OrderBooks[i].setActive(False)
+
+                await broadcast(getAllPortfolioJson())
+                await broadcast(getOrderBooksJson())
+
+
+            elif message[:8] == "REGISTER":
+                j = json.loads(message[8:])
+
+                if j['oneTime'] != "f0ba5d57c7a46efd2d96a02f98d24d49ab7f5e1e":
+                    await websocket.send("602")
+                else:
+                    found = False
+                    for i in fr.getUserConf():
+                        if i['username'] == j['user']:
+                            await websocket.send("601")
+                            found = True
+
+                    if not found:
+                        fr.writeNewUser(j['user'], j['password'])
+
+                        UserList.append(User(j['user']))
+
+                        await websocket.send("200")
 
             elif message[:6] == "QBLIVE":
                 j = json.loads(message[6:])
