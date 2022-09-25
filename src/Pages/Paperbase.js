@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Navigator from './Navigator';
-import Content from './Content';
+
 import Header from './Header';
 import OrderBook from './Orderbook.js';
 import QuoteBook from './Quotebook.js';
@@ -15,7 +15,7 @@ import LogIn from './LogIn.js';
 import { SnackbarProvider } from 'notistack';
 import { useCookies } from "react-cookie";
 import config from './host.config'
-import { useForkRef } from '@mui/material';
+
 
 
 
@@ -183,14 +183,16 @@ export default function Paperbase() {
     setSocketState(socket);
   },[]);   
 
-  const [cookies, setCookie] = useCookies(["user"]);
+  const [cookies, setCookie, removeCookie] = useCookies(["user"]);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [contentType, setContentType] = useState("Portfolio");
+  const [contentType, setContentType] = useState("OrderBook");
   const [socketState, setSocketState] = useState(false);
   const [sockeReadytState, setSocketReadyState] = useState(0);
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
 
-  
+  const logout = () => {
+    removeCookie("user");
+  }
 
   if(socketState === false) return <h1>Socket INIT</h1>
 
@@ -203,11 +205,6 @@ export default function Paperbase() {
   };
   
   if(sockeReadytState != 1) return <h1>Socket Connecting</h1>
-
-  console.log(cookies.user);
-  console.log(socketState.readyState); 
-
- 
 
  const handleSwitchContent = (contentType) => {
     setContentType(contentType);
@@ -246,15 +243,13 @@ export default function Paperbase() {
           />
         </Box>
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <Header onDrawerToggle={handleDrawerToggle} />
+          <Header onDrawerToggle={handleDrawerToggle} onLogout={logout} />
           <Box component="main" sx={{ flex: 1, py: 6, px: 4, bgcolor: '#eaeff1' }}>
           
             {cookies.user === undefined && <LogIn ws = {socketState} cookie={cookies} setCookie ={setCookie}/>}
-            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook ws = {socketState} username ={cookies.user}/>}
+            {cookies.user != undefined && contentType === "OrderBook" && <OrderBook ws = {socketState} username ={cookies.user} />}
             {cookies.user != undefined && contentType === "QuoteBook" && <QuoteBook ws = {socketState} username ={cookies.user} />}
-            {cookies.user != undefined && contentType === "Portfolio" && <Portfolio ws = {socketState} username ={cookies.user} />}
-
-            
+            {cookies.user != undefined && contentType === "Portfolio" && <Portfolio ws = {socketState} username ={cookies.user} />}            
             
           </Box>
           <Box component="footer" sx={{ p: 2, bgcolor: '#eaeff1' }}>

@@ -1,4 +1,4 @@
-import React, { useState,createRef } from "react";
+import React from "react";
 import { withSnackbar } from 'notistack';
 import PropTypes from 'prop-types';
 import { alpha } from '@mui/material/styles';
@@ -213,9 +213,8 @@ class Portfolio extends React.Component {
        dense:true,
        rowsPerPage:100,
        rows:[],
-       timeHour:0,
-       timeMinute:0,
-       timeSecound: 0,
+       time: new Date(Date.now()),  
+       arrived: false,       
        plotData: [],
        plotDataSelect: [],
        groupedValue: {}
@@ -237,9 +236,18 @@ class Portfolio extends React.Component {
             this.generatePlotData()
         }
 
-        if (prevState.timeSecound !== this.state.timeSecound) {
+        if (prevState.time.getTime() !== this.state.time.getTime()) {
             this.getGroupedPrices()
         }
+
+        if (prevState.arrived !== this.state.arrived) {    
+           
+            if(this.state.arrived){             
+                clearInterval(this.interval);               
+            }       
+           
+        }
+
 
         
       }
@@ -254,14 +262,13 @@ class Portfolio extends React.Component {
 
             const row = this.state.rows[i];
 
-            const value = Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity,new Date(Date.now()),row.price)*100) / 100;
+            const value = Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity, this.state.time ,row.price)*100) / 100;
 
             if(current[row.cp] == undefined) current[row.cp] = value;
             else current[row.cp] = current[row.cp] + value;
 
         }
-
-        console.log(current)
+      
 
         this.setState({groupedValue: current});
     }
@@ -477,7 +484,7 @@ class Portfolio extends React.Component {
         let date = new Date(Date.now());
 
 
-        this.setState({ timeHour: date.getHours(), timeMinute: date.getMinutes(), timeSecound: date.getSeconds()  });
+        this.setState({ time: date });
     }
 
     componentDidMount(){
@@ -503,20 +510,28 @@ class Portfolio extends React.Component {
   this.props.ws.onmessage = function (event) {
     
     try {        
-
+       
       if(event.data.substring(0, 15) === "PortfolioUpdate"){    
 
       let jsonResponse = JSON.parse(event.data.substring(15));
 
       let jsonObjectRaw = null;
+      
+  
 
-      for(let p = 0; p < jsonResponse.length; p++) { 
+      for(let p = 0; p < jsonResponse.length - 1; p++) { 
         if(jsonResponse[p].name == this.props.username)
         jsonObjectRaw = jsonResponse[p];
       }
 
+      
+
       if(jsonObjectRaw.data == 420){
         this.setState({struct: <h1>No Positions</h1>})
+        if(jsonResponse[jsonResponse.length - 1].arrivalTime !== 'None'){
+            const time = new Date(jsonResponse[jsonResponse.length - 1].arrivalTime);        
+            this.setState({arrived: true, time: time});
+        }
         return;
       }
 
@@ -526,9 +541,16 @@ class Portfolio extends React.Component {
 
         for(let p = 0; p < jsonObject.length; p++) { 
             tmpRows.push(createData(p, jsonObject[p]['strikeID'], jsonObject[p]['optionType'],jsonObject[p]['side'],jsonObject[p]['price'],jsonObject[p]['quantity'],jsonObject[p]['cp']))            
-        }
+        }       
 
-        this.setState({rows: tmpRows});
+
+        if(jsonResponse[jsonResponse.length - 1].arrivalTime !== 'None'){
+            const time = new Date(jsonResponse[jsonResponse.length - 1].arrivalTime);  
+            this.setState({rows: tmpRows,arrived: true, time: time });
+        }else{
+            this.setState({rows: tmpRows});
+        }
+       
  
 
      }
@@ -592,6 +614,7 @@ class Portfolio extends React.Component {
    let groupedPrices = [];
 
    for(let [key, val] of Object.entries(this.state.groupedValue)) {
+
         groupedPrices.push(<div style={{width:"100%", display:"flex",flexDirection:"column",alignItems:"center"}} key ={key}>
             <h3 style={{margin:"0"}}>{key}</h3>
             <h4 style={{marginTop:"0"}}>{Math.round(val*100)/100} GP</h4>
@@ -683,7 +706,7 @@ class Portfolio extends React.Component {
     
     </div> 
 
-    <h3 style={{marginTop:"50px"}}>{this.state.timeHour} : { this.state.timeMinute < 10 ? "0" + this.state.timeMinute.toString() :  this.state.timeMinute} : {this.state.timeSecound < 10 ? "0" + this.state.timeSecound.toString() : this.state.timeSecound }</h3>
+    <h3 style={{marginTop:"50px"}}>{this.state.time.getHours()} : { this.state.time.getMinutes() < 10 ? "0" + this.state.time.getMinutes().toString() :  this.state.time.getMinutes()} : {this.state.time.getSeconds() < 10 ? "0" + this.state.time.getSeconds().toString() : this.state.time.getSeconds()}</h3>
     <div style={{display:"flex", flexDirection:"row",width:"100%"}}>
     <Box sx={{width: '50%' }}>
 
@@ -743,7 +766,7 @@ class Portfolio extends React.Component {
                       <TableCell>{row.price}</TableCell>
                       <TableCell>{row.quantity}</TableCell>
                       <TableCell>{row.cp}</TableCell>
-                      <TableCell>{(Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity,new Date(Date.now()),row.price)*100) / 100).toString() + " GP"}</TableCell>
+                      <TableCell>{(Math.round(this.getCurrentValue(row.side,row.optionType,strikeMap[row.strikeID],row.quantity, this.state.time ,row.price)*100) / 100).toString() + " GP"}</TableCell>
                   
                     </TableRow>
                   );

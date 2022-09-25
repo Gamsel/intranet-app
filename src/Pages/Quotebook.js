@@ -1,9 +1,9 @@
-import React, { useState,createRef } from "react";
+import React, { createRef } from "react";
 import Button from '@mui/material/Button';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { withSnackbar } from 'notistack';
 import SpeedDial from '@mui/material/SpeedDial';
@@ -12,12 +12,20 @@ import SpeedDialAction from '@mui/material/SpeedDialAction';
 import CloseIcon from '@mui/icons-material/Close';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import AlarmIcon from '@mui/icons-material/Alarm';
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import * as XLSX from "xlsx";
 
 class QuoteBook extends React.Component {
 
   constructor(props) {
     super(props)
 
+    this.inputRef = createRef();
     this.textRef = createRef();
 
     this.state = {
@@ -30,10 +38,14 @@ class QuoteBook extends React.Component {
         oil_mm: this.props.username,
         oil_price: 0,
         freezeMode: "Live" ,
-        marketStatus: "Off"
+        marketStatus: "Off",
+        setTime: "False",
+        arrivalTime: dayjs(),
     }
    
 }
+
+
 
   componentDidMount(){
     try{
@@ -63,8 +75,8 @@ class QuoteBook extends React.Component {
 
     const oilCommitParameter = (mm, strike ,type ,bs, price, qty, operator) =>{
       if(price > 0){
-        if(this.state.oil_qty > 0){
-      this.props.ws.send('QB{"MM":"' + mm + '","strikeID":' + strike + ',"optionType":"' + type + '","side":"' + bs + '","price":' + parseFloat( price.toString())  + 
+        if(qty > 0){
+          this.props.ws.send('QB{"MM":"' + mm + '","strikeID":' + strike + ',"optionType":"' + type + '","side":"' + bs + '","price":' + parseFloat( price.toString())  + 
                          ', "quantity":' + parseInt( qty.toString()) + ',"operator":"' + operator+'", "mode": "' + this.state.freezeMode +'" }'); 
         }else{
           this.props.enqueueSnackbar('Quantity kann nicht 0 sein', { variant: 'error' });
@@ -73,6 +85,96 @@ class QuoteBook extends React.Component {
         this.props.enqueueSnackbar('Price kann nicht 0 sein', { variant: 'error' });
       }
     }
+
+    const readExcel = (e) => {
+      const [file] = e.target.files;
+      const reader = new FileReader();
+  
+      reader.onload = (evt) => {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_csv(ws, { header: 1 });
+        const lines = data.split('\n');
+  
+        let points = {"START":{"x": null ,"y": null}, "SPACES":[]};
+        let orders = [];
+  
+        let active = false;
+   
+        exit_loops:
+        for (let i = 0; i < lines.length; i++){ 
+  
+          if(points["START"]["x"] === null && !lines[i].includes("START")) continue;       
+  
+          let fields = lines[i].split(',')
+  
+          let orderAtLine = [];
+  
+          let startFound = false;
+  
+          let type = "C";
+        
+          for(let j = 0 ; j < fields.length; j++){
+  
+            if (!active){
+  
+              if(fields[j] === "START"){
+                startFound = true;            
+                points["START"] = {"x": j, "y":i};
+              } 
+  
+              if(fields[j] === "SPACE") points["SPACES"].push(j);
+  
+            }else{   
+  
+             
+              if(points["START"]["x"] > j || (points["START"]["x"] +  9 + points["SPACES"].length) < j || points["SPACES"].includes(j) ) continue;
+              if(fields[j] === "END"){        
+                break exit_loops;  
+              }         
+              
+      
+              orderAtLine.push(fields[j]);            
+  
+            }           
+            
+            
+            if (orderAtLine.length === 5){
+  
+              if(parseFloat(orderAtLine[1]) > 0 && parseInt(orderAtLine[0]) > 0)
+              orders.push({"mm": this.props.username, "strike": orderAtLine[2], "type": type,"bs": "B","price": parseFloat(orderAtLine[1]), "qty": parseInt(orderAtLine[0]) ,"operator": "+"});
+              if(parseFloat(orderAtLine[3]) > 0 && parseInt(orderAtLine[4]) > 0)
+              orders.push({"mm": this.props.username, "strike": orderAtLine[2], "type": type,"bs": "S","price":parseFloat(orderAtLine[3]), "qty": parseInt(orderAtLine[4]) ,"operator": "+"});
+  
+              type === "C" ? type = "P" : type = "C";
+  
+              orderAtLine = [];
+            }
+           
+          }       
+  
+          if(startFound) active = true; 
+          
+        }
+
+        const strikeMap = { 0: "12:00", 1:"12:15" , 2:"12:30" , 3:"12:45" , 4:"13:00", 5:"13:15" , 6:"13:30" ,  7:"13:45" , 8:"14:00"};
+         
+        for (let i = 0; i < orders.length; i++){    
+          const strikeID =  Object.keys(strikeMap).find(key => strikeMap[key] === orders[i].strike);
+          if (strikeID != undefined){
+            oilCommitParameter(orders[i].mm, strikeID, orders[i].type, orders[i].bs, orders[i].price, orders[i].qty, orders[i].operator);
+          }else{
+            this.props.enqueueSnackbar('Excel: Strike muss zwischen 12 und 14 Uhr liegen darf nur 15 Minuten Schritte beinhalten: ' + orders[i].strike , { variant: 'error' });
+          }
+          
+        }
+  
+     
+      };
+      reader.readAsBinaryString(file);
+    };
 
 
   const handleKeyDown = (event) => {
@@ -99,6 +201,10 @@ class QuoteBook extends React.Component {
 
       this.setState({freezeMode:"Freeze"});
 
+    }else if(operation === "setTime"){
+
+      this.setState({setTime:"True"});
+
     }
  
    
@@ -119,9 +225,8 @@ class QuoteBook extends React.Component {
       for(let p = 0; p < jsonResponse.length; p++) {
         if(jsonResponse[p].MM.name == this.props.username)
         jsonObject = jsonResponse[p];
-      }
-      
-      console.log(jsonObject)
+      }     
+    
 
       if(jsonObject.active !== "True"){
 
@@ -407,11 +512,15 @@ class QuoteBook extends React.Component {
   }.bind(this);
 
     const actions = [
-      { icon: <CloseIcon />, name: 'Close Market', operation: "Close"}, 
+      { icon: <CloseIcon />, name: 'Close Market', operation: "Close"},  
       { icon: this.state.freezeMode == "Freeze" ? <WhatshotIcon /> :  <AcUnitIcon />  , name:  this.state.freezeMode == "Freeze" ?  'Go Live' : 'Freeze Mode', operation: this.state.freezeMode == "Freeze" ?  'Live' : 'Freeze' },
+      { icon: <AlarmIcon/> , name:  "Set Arrival Time", operation: "setTime" },
+
     ];
  
-    return (<div style={{display:"flex", flexDirection:"column",  alignItems:"center"}}>
+    return (
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <div style={{display:"flex", flexDirection:"column",  alignItems:"center"}}>
 
       { this.state.marketStatus === "Live" && <div style={{height:"100px", width:"50vw",backgroundColor: this.state.oil_bs === "S" ? "#fca0a2":"#a1e9a0", marginBottom:"50px", display:"flex", justifyContent:"center", alignItems:"center"}}>
         
@@ -546,10 +655,61 @@ class QuoteBook extends React.Component {
               handleSpeedDialClick(action.operation)
           }}
           />
-        ))}
+        ))}     
+
+        <SpeedDialAction        
+            key={"Upload Excel"}
+            icon={<FileUploadIcon />}
+            tooltipTitle={"Upload Excel"}
+            onClick={() => { 
+              this.inputRef.current.click()          
+          }}
+          />
+
+
       </SpeedDial>
+
+      <input type="file" ref={this.inputRef} style={{display:"none"}} onClick={(e)=> {e.target.value = null}} onChange={readExcel}></input>
+
+      {this.state.setTime === "True" && 
+          <div style={{display:"flex", flexDirection:"column", position:"absolute", left:"57.5%", top:"50%", width:"75%", height:"50%",backgroundColor:"#ffffff", transform: "translate(-50%, -50%)",boxShadow: "rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px" }}>
+          <div style={{display:"flex", width:"100%",justifyContent: "end" }}> 
+          <CloseIcon fontSize={"large"} onClick={() => {this.setState({setTime: "False"})}}/>
+          </div>
+
+          <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center", flexDirection:"column", justifyContent:"space-evenly"}} >
+          <h2>Set Arrival Time</h2>
+
+          <TimePicker
+          ampm={false}
+          openTo="hours"
+          views={['hours', 'minutes', 'seconds']}
+          inputFormat="HH:mm:ss"
+          mask="__:__:__"
+          label="Arrival Time"
+          value={this.state.arrivalTime}
+          onChange={(newValue) => {
+           this.setState({arrivalTime: newValue})
+          }}
+          renderInput={(params) => <TextField {...params} />}
+        />
+
+            <Button variant="contained" onClick={() => {
+              this.setState({setTime: "False"}); 
+              this.props.ws.send('SETARRIVAL{"time":"'+ this.state.arrivalTime.toDate()+'"}');
+                 
+
+              }} >Confirm Arrival Time</Button>
+
+          </div>
+          
+
+
+          </div>        
+        }
         
     </div>
+    </LocalizationProvider>
       
     );
   }
@@ -557,11 +717,3 @@ class QuoteBook extends React.Component {
 
 export default withSnackbar(QuoteBook);
 
-/*
-
-    <tr>
-
-        </tr>
-<div> {this.state.bids}</div>
-      <Button variant="contained"  onClick={this.send} >Contained</Button>
-      */
